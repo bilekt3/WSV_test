@@ -10,7 +10,6 @@ import os
 import platform
 import unittest
 from datetime import datetime
-from secrets import teams_webhook, wsv_account
 
 import pymsteams
 import yaml
@@ -30,6 +29,7 @@ from config import (
     xpath_units,
     xpath_username,
 )
+from secrets import teams_webhook, wsv_account
 
 _LOGGER = logging.getLogger(__name__)
 logging.basicConfig(
@@ -50,10 +50,7 @@ class TestStringMethods(unittest.TestCase):
     def setUp(self):
         """Test fixture - open the browser."""
         _LOGGER.info(
-            "\n------------------------------\n"
-            "Setting test up for %s\n"
-            "------------------------------\n",
-            self.location,
+            "\n" + "-" * 32 + "\nSetting test up for %s\n" + "-" * 32, self.location
         )
         self.browser = webdriver.Chrome()
         self.browser.maximize_window()
@@ -212,7 +209,9 @@ if __name__ == "__main__":
             with open(status_file, "r") as f:
                 status = yaml.full_load(f)
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-            _LOGGER.info("Successful test: %s", t.result.wasSuccessful())
+            _LOGGER.info(
+                "\n" + "-" * 32 + "\nSuccessful test: %s", t.result.wasSuccessful()
+            )
             if t.result.wasSuccessful():
                 if not status["status"]:
                     status["status"] = True
