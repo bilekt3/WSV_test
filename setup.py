@@ -11,7 +11,6 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         'unittest',
-        'datetime',
         'parameterized',
         'selenium',
         'pyvirtualdisplay',
