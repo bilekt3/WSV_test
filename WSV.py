@@ -16,8 +16,14 @@ import yaml
 from parameterized import parameterized_class
 from pyvirtualdisplay import Display
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import (
+    NoSuchElementException,
+    StaleElementReferenceException,
+)
+from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 from config import (
     config,
@@ -82,6 +88,22 @@ class TestStringMethods(unittest.TestCase):
         else:
             super().assertEqual(first, second)
 
+    def wait_find_element_by_xpath(self, maxTimeOut, locatorProperties):
+        """In case the element got destroyed, wait for it to be recreated."""
+        element = None
+        try:
+            WebDriverWait(
+                self.browser,
+                maxTimeOut,
+                ignored_exceptions=[StaleElementReferenceException],
+            ).until(EC.presence_of_element_located((By.XPATH, locatorProperties)))
+            element = self.browser.find_element_by_xpath(locatorProperties)
+        except Exception:
+            raise NoSuchElementException(
+                "Exception occurred during object identification."
+            )
+        return element
+
     def test_WSV(self):
         """Test case."""
         # Open WebSupervisor, check page title
@@ -96,9 +118,9 @@ class TestStringMethods(unittest.TestCase):
         )
         self.browser.implicitly_wait(40)
         try:
-            username = self.browser.find_element_by_xpath(xpath_username)
-            password = self.browser.find_element_by_xpath(xpath_password)
-            login = self.browser.find_element_by_xpath(xpath_login)
+            username = self.wait_find_element_by_xpath(10, xpath_username)
+            password = self.wait_find_element_by_xpath(10, xpath_password)
+            login = self.wait_find_element_by_xpath(10, xpath_login)
         except NoSuchElementException:
             login = None
         self.assertTrue(
@@ -113,25 +135,22 @@ class TestStringMethods(unittest.TestCase):
         password.send_keys(self.user_password)
         login.click()
         self.browser.implicitly_wait(40)
-        try:
-            login_id = self.browser.find_element_by_xpath(xpath_login_id)
-        except NoSuchElementException:
-            login_id = None
-        self.assertTrue(
-            login_id is not None, "Login not succesfull - user name not found!"
-        )
         _LOGGER.info("Testing logged user name")
-        _LOGGER.info("Logged user: %s", login_id.text)
+        try:
+            login_id = self.wait_find_element_by_xpath(10, xpath_login_id).text
+        except (NoSuchElementException, AttributeError):
+            login_id = None
+        _LOGGER.info("Logged user: %s", login_id)
         self.assertIn(
             self.display_name,
-            login_id.text,
+            login_id,
             f'The username does not match! Expected "{self.display_name}",'
-            f' found "{login_id.text}"',
+            f' found "{login_id}"',
         )
 
         # Go to Units section, count the number of units
         try:
-            units_button = self.browser.find_element_by_xpath(xpath_units)
+            units_button = self.wait_find_element_by_xpath(10, xpath_units)
         except NoSuchElementException:
             units_button = None
         self.assertTrue(units_button is not None, 'The "units" button not found')
@@ -195,8 +214,8 @@ def FormatMessage(msg):
     """Format the message."""
     test = msg[0]._testMethodName
     err = msg[1]
-    assertion = err[err.find("AssertionError") + 15 :]
-    return test + assertion[assertion.find(":") + 1 :]
+    assertion = err[err.find("AssertionError") + 15:]
+    return test + assertion[assertion.find(":") + 1:]
 
 
 if __name__ == "__main__":
