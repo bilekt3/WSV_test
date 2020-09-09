@@ -104,6 +104,22 @@ class TestStringMethods(unittest.TestCase):
             )
         return element
 
+    # def wait_find_element_by_class_name(self, maxTimeOut, locatorProperties):
+    #     """In case the element got destroyed, wait for it to be recreated."""
+    #     element = None
+    #     try:
+    #         WebDriverWait(
+    #             self.browser,
+    #             maxTimeOut,
+    #             ignored_exceptions=[StaleElementReferenceException],
+    #         ).until(EC.presence_of_element_located((By.CLASS_NAME, locatorProperties)))
+    #         element = self.browser.find_element_by_class_name(locatorProperties)
+    #     except Exception:
+    #         raise NoSuchElementException(
+    #             "Exception occurred during object identification."
+    #         )
+    #     return element
+
     def test_WSV(self):
         """Test case."""
         # Open WebSupervisor, check page title
@@ -157,7 +173,7 @@ class TestStringMethods(unittest.TestCase):
         units_button.click()
         self.browser.implicitly_wait(30)
         try:
-            table = self.browser.find_elements_by_class_name("main-table")
+            table = self.browser.find_element_by_class_name("main-table")
         except NoSuchElementException:
             table = None
         self.assertTrue(table is not None, "Unit table not found")
