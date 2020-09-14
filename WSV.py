@@ -27,7 +27,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from config import (
     config,
+    ERP_url,
     status_file,
+    send_to_teams,
     test_enabled,
     xpath_login,
     xpath_login_id,
@@ -45,13 +47,15 @@ logging.basicConfig(
     filemode="w",
 )
 
+# pylint: disable=no-member
+
 
 @parameterized_class(
     ("location", "url", "display_name", "unit_count", "user_name", "user_password"),
     [config[i] + wsv_account[i] for i in range(0, len(config))],
 )
-class TestStringMethods(unittest.TestCase):
-    """Web Supervisor tests."""
+class TestWSV(unittest.TestCase):
+    """WebSupervisor tests."""
 
     def setUp(self):
         """Test fixture - open the browser."""
@@ -70,25 +74,32 @@ class TestStringMethods(unittest.TestCase):
     def assertIn(self, member, container, msg=None):
         """Redefine method to include datacenter name."""
         if msg is not None:
-            super().assertIn(member, container, self.location + ": " + msg)
+            super().assertIn(member, container, f"{self.location}: {msg}")
         else:
             super().assertIn(member, container)
+
+    def assertIsNotNone(self, expr, msg=None):
+        """Redefine method to include datacenter name."""
+        if msg is not None:
+            super().assertIsNotNone(expr, f"{self.location}: {msg}")
+        else:
+            super().assertIsNotNone(expr)
 
     def assertTrue(self, expr, msg=None):
         """Redefine method to include datacenter name."""
         if msg is not None:
-            super().assertTrue(expr, self.location + ": " + msg)
+            super().assertTrue(expr, f"{self.location}: {msg}")
         else:
             super().assertTrue(expr)
 
     def assertEqual(self, first, second, msg=None):
         """Redefine method to include datacenter name."""
         if msg is not None:
-            super().assertEqual(first, second, self.location + ": " + msg)
+            super().assertEqual(first, second, f"{self.location}: {msg}")
         else:
             super().assertEqual(first, second)
 
-    def wait_find_element_by_xpath(self, maxTimeOut, locatorProperties):
+    def wait_find_element_by_xpath(self, maxTimeOut, locator):
         """In case the element got destroyed, wait for it to be recreated."""
         element = None
         try:
@@ -96,29 +107,29 @@ class TestStringMethods(unittest.TestCase):
                 self.browser,
                 maxTimeOut,
                 ignored_exceptions=[StaleElementReferenceException],
-            ).until(EC.presence_of_element_located((By.XPATH, locatorProperties)))
-            element = self.browser.find_element_by_xpath(locatorProperties)
+            ).until(EC.presence_of_element_located((By.XPATH, locator)))
+            element = self.browser.find_element_by_xpath(locator)
         except Exception:
             raise NoSuchElementException(
                 "Exception occurred during object identification."
             )
         return element
 
-    # def wait_find_element_by_class_name(self, maxTimeOut, locatorProperties):
-    #     """In case the element got destroyed, wait for it to be recreated."""
-    #     element = None
-    #     try:
-    #         WebDriverWait(
-    #             self.browser,
-    #             maxTimeOut,
-    #             ignored_exceptions=[StaleElementReferenceException],
-    #         ).until(EC.presence_of_element_located((By.CLASS_NAME, locatorProperties)))
-    #         element = self.browser.find_element_by_class_name(locatorProperties)
-    #     except Exception:
-    #         raise NoSuchElementException(
-    #             "Exception occurred during object identification."
-    #         )
-    #     return element
+    def wait_find_elements_by_class_name(self, maxTimeOut, locator):
+        """In case the element got destroyed, wait for it to be recreated."""
+        elements = None
+        try:
+            WebDriverWait(
+                self.browser,
+                maxTimeOut,
+                ignored_exceptions=[StaleElementReferenceException],
+            ).until(EC.presence_of_all_elements_located((By.CLASS_NAME, locator)))
+            elements = self.browser.find_elements_by_class_name(locator)
+        except Exception:
+            raise NoSuchElementException(
+                "Exception occurred during object identification."
+            )
+        return elements
 
     def test_WSV(self):
         """Test case."""
@@ -126,6 +137,7 @@ class TestStringMethods(unittest.TestCase):
         self.browser.get(self.url)
         _LOGGER.info("Testing website title")
         _LOGGER.info("Title: %s", self.browser.title)
+        self.assertIsNotNone(self.browser.title, "Can't find the webpage tille. WSV down?")
         self.assertIn(
             "WebSupervisor",
             self.browser.title,
@@ -157,6 +169,7 @@ class TestStringMethods(unittest.TestCase):
         except (NoSuchElementException, AttributeError):
             login_id = None
         _LOGGER.info("Logged user: %s", login_id)
+        self.assertIsNotNone(login_id, "Can't find username. Login not working?")
         self.assertIn(
             self.display_name,
             login_id,
@@ -169,14 +182,14 @@ class TestStringMethods(unittest.TestCase):
             units_button = self.wait_find_element_by_xpath(10, xpath_units)
         except NoSuchElementException:
             units_button = None
-        self.assertTrue(units_button is not None, 'The "units" button not found')
+        self.assertIsNotNone(units_button, 'The "units" button not found')
         units_button.click()
         self.browser.implicitly_wait(30)
         try:
-            table = self.browser.find_element_by_class_name("main-table")
+            table = self.wait_find_elements_by_class_name(10, "main-table")
         except NoSuchElementException:
             table = None
-        self.assertTrue(table is not None, "Unit table not found")
+        self.assertIsNotNone(table, "Unit table not found")
         table_rows = table[0].find_elements_by_tag_name("tr")
         units = []
         _LOGGER.info("Testing list of units")
@@ -193,10 +206,54 @@ class TestStringMethods(unittest.TestCase):
             f"expected {self.unit_count}",
         )
 
+# class TestERP(unittest.TestCase):
+#     """ERP tests."""
+
+#     def setUp(self):
+#         """Test fixture - open the browser."""
+#         _LOGGER.info("\n" + "-" * 32 + "\nSetting test up for ERP\n" + "-" * 32)
+#         self.browser = webdriver.Chrome()
+#         self.browser.maximize_window()
+#         self.browser.implicitly_wait(20)
+
+#     def tearDown(self):
+#         """Close the browser window."""
+#         _LOGGER.info("Tearing down test for ERP")
+#         self.browser.quit()
+
+#     def wait_find_element_by_xpath(self, maxTimeOut, locator):
+#         """In case the element got destroyed, wait for it to be recreated."""
+#         element = None
+#         try:
+#             WebDriverWait(
+#                 self.browser,
+#                 maxTimeOut,
+#                 ignored_exceptions=[StaleElementReferenceException],
+#             ).until(EC.presence_of_element_located((By.XPATH, locator)))
+#             element = self.browser.find_element_by_xpath(locator)
+#         except Exception:
+#             raise NoSuchElementException(
+#                 "Exception occurred during object identification."
+#             )
+#         return element
+
+#     def test_ERP(self):
+#         """Test case."""
+#         # Open ERP, check page title
+#         self.browser.get(ERP_url)
+#         _LOGGER.info("Testing website title")
+#         _LOGGER.info("Title: %s", self.browser.title)
+#         self.assertIn(
+#             "Dashboard -- Finance and Operations",
+#             self.browser.title,
+#             "The webpage title does not match. "
+#             f'Expected "Dashboard -- Finance and Operations", found "{self.browser.title}"',
+#         )
 
 def TeamsMessage(state, timestamp, message=""):
     """Post error message to Teams."""
-    if platform.system() == "Windows":
+    # if platform.system() == "Windows":
+    if not send_to_teams:
         if state:
             print("Automated WSV alert canceled (beta)")
             print(f"{timestamp}: WSV is running normaly.")
