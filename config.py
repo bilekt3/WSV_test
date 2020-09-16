@@ -1,8 +1,8 @@
 """Configuration parameters for each site."""
 
 config = [
-    ("North_Europe", "https://www.websupervisor.net/", "name", 15),
-    ("Australia", "https://aus.websupervisor.net/", "name", 4),
+    ("North_Europe", "https://www.websupervisor.net/", "you_name_here", 15),
+    ("Australia", "https://aus.websupervisor.net/", "you_name_here", 4),
 ]
 
 xpath_username = '//*[@id="microsite-login-name"]'
