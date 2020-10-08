@@ -13,6 +13,8 @@ xpath_login_id = (
 )
 xpath_units = '//*[@id="main-menu-nav"]/ul/li[2]/a'
 
+ERP_url = 'https://comap-control.operations.dynamics.com/'
+
 status_file = "status.yaml"
 
 test_enabled = True

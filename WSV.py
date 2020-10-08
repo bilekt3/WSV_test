@@ -92,13 +92,6 @@ class TestWSV(unittest.TestCase):
         else:
             super().assertTrue(expr)
 
-    def assertEqual(self, first, second, msg=None):
-        """Redefine method to include datacenter name."""
-        if msg is not None:
-            super().assertEqual(first, second, f"{self.location}: {msg}")
-        else:
-            super().assertEqual(first, second)
-
     def wait_find_element_by_xpath(self, maxTimeOut, locator):
         """In case the element got destroyed, wait for it to be recreated."""
         element = None
@@ -199,9 +192,8 @@ class TestWSV(unittest.TestCase):
                 units.append(unit.text)
                 _LOGGER.info("Unit: %s", unit.text)
         _LOGGER.info("Found %d units", len(units))
-        self.assertEqual(
-            len(units),
-            self.unit_count,
+        self.assertTrue(
+            len(units) >= self.unit_count,
             f"Number of units does not match. Found {len(units)}, "
             f"expected {self.unit_count}",
         )
@@ -249,6 +241,7 @@ class TestWSV(unittest.TestCase):
 #             "The webpage title does not match. "
 #             f'Expected "Dashboard -- Finance and Operations", found "{self.browser.title}"',
 #         )
+
 
 def TeamsMessage(state, timestamp, message=""):
     """Post error message to Teams."""
