@@ -64,7 +64,7 @@ class TestWSV(unittest.TestCase):
         )
         self.browser = webdriver.Chrome()
         self.browser.maximize_window()
-        self.browser.implicitly_wait(20)
+        self.browser.implicitly_wait(60)
 
     def tearDown(self):
         """Close the browser window."""
@@ -137,11 +137,10 @@ class TestWSV(unittest.TestCase):
             "The webpage title does not match. "
             f'Expected "WebSupervisor", found "{self.browser.title}"',
         )
-        self.browser.implicitly_wait(40)
         try:
-            username = self.wait_find_element_by_xpath(10, xpath_username)
-            password = self.wait_find_element_by_xpath(10, xpath_password)
-            login = self.wait_find_element_by_xpath(10, xpath_login)
+            username = self.wait_find_element_by_xpath(60, xpath_username)
+            password = self.wait_find_element_by_xpath(60, xpath_password)
+            login = self.wait_find_element_by_xpath(60, xpath_login)
         except NoSuchElementException:
             login = None
         self.assertTrue(
@@ -155,10 +154,9 @@ class TestWSV(unittest.TestCase):
         password.clear()
         password.send_keys(self.user_password)
         login.click()
-        self.browser.implicitly_wait(40)
         _LOGGER.info("Testing logged user name")
         try:
-            login_id = self.wait_find_element_by_xpath(10, xpath_login_id).text
+            login_id = self.wait_find_element_by_xpath(60, xpath_login_id).text
         except (NoSuchElementException, AttributeError):
             login_id = None
         _LOGGER.info("Logged user: %s", login_id)
@@ -172,14 +170,13 @@ class TestWSV(unittest.TestCase):
 
         # Go to Units section, count the number of units
         try:
-            units_button = self.wait_find_element_by_xpath(10, xpath_units)
+            units_button = self.wait_find_element_by_xpath(60, xpath_units)
         except NoSuchElementException:
             units_button = None
         self.assertIsNotNone(units_button, 'The "units" button not found')
         units_button.click()
-        self.browser.implicitly_wait(30)
         try:
-            table = self.wait_find_elements_by_class_name(10, "main-table")
+            table = self.wait_find_elements_by_class_name(60, "main-table")
         except NoSuchElementException:
             table = None
         self.assertIsNotNone(table, "Unit table not found")
@@ -206,7 +203,7 @@ class TestWSV(unittest.TestCase):
 #         _LOGGER.info("\n" + "-" * 32 + "\nSetting test up for ERP\n" + "-" * 32)
 #         self.browser = webdriver.Chrome()
 #         self.browser.maximize_window()
-#         self.browser.implicitly_wait(20)
+#         self.browser.implicitly_wait(60)
 
 #     def tearDown(self):
 #         """Close the browser window."""
